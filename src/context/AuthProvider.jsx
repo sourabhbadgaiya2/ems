@@ -1,59 +1,49 @@
-// import { createContext, useState, useEffect } from "react";
-// import { getlocalstorage, setlocalstorage } from "../utils/localStorage";
-
-// export const AuthContext = createContext(null);
-
-// const AuthProvider = ({ children }) => {
-//   const [userData, setUserData] = useState(null);
-
-//   useEffect(() => {
-//     setlocalstorage();
-//     const { employees, admin } = getlocalstorage();
-//     setUserData({ employees, admin });
-//   }, []);
-
-//   // const data = getlocalstorage()
-//   // console.log(data)
-//   return (
-//     <div>
-//       <AuthContext.Provider value={userData}>{children}</AuthContext.Provider>
-//     </div>
-//   );
-// };
-
-// export default AuthProvider;
-
-
 import { createContext, useState, useEffect } from "react";
 import { getlocalstorage, setlocalstorage } from "../utils/localStorage";
 
-export const AuthContext = createContext(null);
+export const AuthContext = createContext();
 
-const AuthProvider = ({children}) => {
-  const [userData, setUserData] = useState(null);
+const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [employees, setEmployees] = useState([]);
 
   useEffect(() => {
     setlocalstorage();
     const { employees, admin } = getlocalstorage();
-    setUserData({ employees, admin });
+    setEmployees(employees);
   }, []);
 
   const handleLogin = (email, password) => {
     const { admin } = getlocalstorage();
-    const user = admin.find(
-      (user) => user.email === email && user.password === password
-    );
 
-    if (user) {
-      alert("Login successful!");
-      // Perform further actions, like setting user state
+    if (
+      admin.find((user) => user.email === email && user.password === password)
+    ) {
+      setUser({ role: "admin" });
+      localStorage.setItem("loggedInUser", JSON.stringify({ role: "admin" }));
     } else {
-      alert("Invalid credentials!");
+      const employee = employees.find(
+        (e) => e.email === email && e.password === password
+      );
+      if (employee) {
+        setUser({ role: "employee", data: employee });
+        localStorage.setItem(
+          "loggedInUser",
+          JSON.stringify({ role: "employee", data: employee })
+        );
+      } else {
+        alert("Invalid credentials!");
+      }
     }
   };
 
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("loggedInUser");
+  };
+
   return (
-    <AuthContext.Provider value={{ userData, handleLogin }}>
+    <AuthContext.Provider value={{ user, handleLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );
